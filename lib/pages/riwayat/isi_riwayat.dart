@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../config.dart';
 import 'detail_stbm_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RiwayatPage extends StatefulWidget {
   const RiwayatPage({super.key});
@@ -32,7 +33,9 @@ class _RiwayatPageState extends State<RiwayatPage> {
 
   Future<void> _fetchStbm() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/stbm'));
+      final prefs = await SharedPreferences.getInstance();
+      final pegawaiId = prefs.getInt('pegawai_id');
+      final response = await http.get(Uri.parse('$baseUrl/api/stbm?pegawai_id=$pegawaiId'));
       if (response.statusCode == 200) {
         setState(() {
           stbmList = jsonDecode(response.body);
@@ -129,8 +132,19 @@ class _RiwayatPageState extends State<RiwayatPage> {
           margin: const EdgeInsets.symmetric(vertical: 6),
           child: ListTile(
             title: Text(stbm['wilayah']?['desa'] ?? '-'),
-            subtitle: Text(
-              'Kepala Keluarga: ${stbm['nama_kepala_kk']}',
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Kepala Keluarga: ${stbm['kk']?['nama_kepala_kk'] ?? '-'}',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'No KK: ${stbm['kk']?['no_kk'] ?? '-'}',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ],
             ),
             onTap: () {
               Navigator.push(

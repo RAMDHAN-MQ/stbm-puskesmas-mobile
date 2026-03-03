@@ -77,13 +77,26 @@ class DetailStbmPage extends StatelessWidget {
               "No KK",
               data['no_kk']?.toString() ?? "-",
             ),
-            buildInfoTile("Nama Kepala KK", data['nama_kepala_kk'] ?? "-"),
-            buildInfoTile("RT", data['rt']?.toString() ?? "-"),
-            buildInfoTile("RW", data['rw']?.toString() ?? "-"),
             buildInfoTile(
-                "Jumlah Jiwa", data['jumlah_jiwa']?.toString() ?? "-"),
-            buildInfoTile("Jumlah Jiwa Menetap",
-                data['jumlah_jiwa_menetap']?.toString() ?? "-"),
+              "Nama Kepala KK",
+              data['kk']?['nama_kepala_kk'] ?? "-",
+            ),
+            buildInfoTile(
+              "RT",
+              data['kk']?['rt']?.toString() ?? "-",
+            ),
+            buildInfoTile(
+              "RW",
+              data['kk']?['rw']?.toString() ?? "-",
+            ),
+            buildInfoTile(
+              "Jumlah Jiwa",
+              data['kk']?['jumlah_jiwa']?.toString() ?? "-",
+            ),
+            buildInfoTile(
+              "Jumlah Jiwa Menetap",
+              data['kk']?['jumlah_jiwa_menetap']?.toString() ?? "-",
+            ),
             const SizedBox(height: 20),
             const Align(
               alignment: Alignment.centerLeft,

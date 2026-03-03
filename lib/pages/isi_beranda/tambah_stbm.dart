@@ -12,7 +12,7 @@ class TambahStbmPage extends StatefulWidget {
 }
 
 class _TambahStbmPageState extends State<TambahStbmPage> {
-  final TextEditingController noKkController = TextEditingController();
+  final TextEditingController wilayah = TextEditingController();
   final TextEditingController namaKepalaKkController = TextEditingController();
   final TextEditingController rtController = TextEditingController();
   final TextEditingController rwController = TextEditingController();
@@ -21,10 +21,11 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
   final TextEditingController jumlahJiwaMenetapController =
       TextEditingController();
 
-  String? selectedWilayah;
-  List<Map<String, dynamic>> wilayahList = [];
+  String? selectedKk;
+  List<Map<String, dynamic>> kkList = [];
 
   int? pegawaiId;
+  int? selectedWilayahId;
 
   final String baseUrl = Config.baseUrl;
 
@@ -36,7 +37,7 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
   void initState() {
     super.initState();
     _loadPegawai();
-    _fetchWilayah();
+    _fetchKk();
     _fetchPertanyaan();
   }
 
@@ -44,23 +45,23 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
     final prefs = await SharedPreferences.getInstance();
 
     setState(() {
-      pegawaiId = prefs.getInt('user_id');
+      pegawaiId = prefs.getInt('pegawai_id');
       pegawaiController.text = prefs.getString('nama') ?? '';
     });
   }
 
-  Future<void> _fetchWilayah() async {
+  Future<void> _fetchKk() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/wilayah'));
+      final response = await http.get(Uri.parse('$baseUrl/api/kk'));
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = List<Map<String, dynamic>>.from(jsonDecode(response.body));
         setState(() {
-          wilayahList = List<Map<String, dynamic>>.from(data);
+          kkList = data;
         });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetch wilayah: $e')),
+        SnackBar(content: Text('Error fetch kk: $e')),
       );
     }
   }
@@ -90,12 +91,8 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
   }
 
   Future<void> _addStbm() async {
-    final noKk = noKkController.text;
+    final noKk = selectedKk;
     final namaKepalaKk = namaKepalaKkController.text;
-    final rt = rtController.text;
-    final rw = rwController.text;
-    final jumlahJiwa = jumlahJiwaController.text;
-    final jumlahJiwaMenetap = jumlahJiwaMenetapController.text;
 
     if (pegawaiId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -105,7 +102,7 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
       return;
     }
 
-    if (selectedWilayah == null || noKk.isEmpty || namaKepalaKk.isEmpty) {
+    if (selectedKk == null || noKk!.isEmpty || namaKepalaKk.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Semua data wajib diisi')),
       );
@@ -129,13 +126,8 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'pegawai_id': pegawaiId,
-          'wilayah_id': selectedWilayah,
+          'wilayah_id': selectedWilayahId,
           'no_kk': noKk,
-          'nama_kepala_kk': namaKepalaKk,
-          'rt': rt,
-          'rw': rw,
-          'jumlah_jiwa': jumlahJiwa,
-          'jumlah_jiwa_menetap': jumlahJiwaMenetap,
           'jawaban': jawabanList,
         }),
       );
@@ -288,56 +280,97 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
                 border: OutlineInputBorder(),
               ),
             ),
-            DropdownButtonFormField<String>(
-              value: selectedWilayah,
-              decoration: const InputDecoration(labelText: 'Wilayah'),
-              items: wilayahList.map((w) {
-                return DropdownMenuItem(
-                  value: w['id'].toString(),
-                  child: Text(w['desa']),
+            const SizedBox(height: 16),
+            Autocomplete<Map<String, dynamic>>(
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (textEditingValue.text.isEmpty) {
+                  return kkList;
+                }
+                return kkList.where((kk) =>
+                    kk['no_kk'].toString().contains(textEditingValue.text));
+              },
+              displayStringForOption: (option) => option['no_kk'].toString(),
+              fieldViewBuilder:
+                  (context, controller, focusNode, onEditingComplete) {
+                return TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  decoration: const InputDecoration(
+                    labelText: 'Pilih No KK',
+                    border: OutlineInputBorder(),
+                  ),
                 );
-              }).toList(),
-              onChanged: (val) {
+              },
+              onSelected: (selection) {
                 setState(() {
-                  selectedWilayah = val;
+                  selectedKk = selection['no_kk'].toString();
+                  selectedWilayahId = selection['wilayah_id'];
+
+                  wilayah.text = selection['wilayah']?['desa'] ?? '';
+                  namaKepalaKkController.text =
+                      selection['nama_kepala_kk'] ?? '';
+                  rtController.text = selection['rt'].toString();
+                  rwController.text = selection['rw'].toString();
+                  jumlahJiwaController.text =
+                      selection['jumlah_jiwa'].toString();
+                  jumlahJiwaMenetapController.text =
+                      selection['jumlah_jiwa_menetap'].toString();
                 });
               },
             ),
             const SizedBox(height: 16),
             TextField(
-              controller: noKkController,
-              decoration: const InputDecoration(labelText: 'No. KK'),
-              keyboardType: TextInputType.number,
+              controller: wilayah,
+              readOnly: true,
+              decoration: const InputDecoration(
+                labelText: 'Wilayah',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: namaKepalaKkController,
-              decoration: const InputDecoration(labelText: 'Nama Kepala KK'),
+              readOnly: true,
+              decoration: const InputDecoration(
+                labelText: 'Nama Kepala KK',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: rtController,
-              decoration: const InputDecoration(labelText: 'RT'),
-              keyboardType: TextInputType.number,
+              readOnly: true,
+              decoration: const InputDecoration(
+                labelText: 'RT',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: rwController,
-              decoration: const InputDecoration(labelText: 'RW'),
-              keyboardType: TextInputType.number,
+              readOnly: true,
+              decoration: const InputDecoration(
+                labelText: 'RW',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: jumlahJiwaController,
-              decoration: const InputDecoration(labelText: 'Jumlah Jiwa'),
-              keyboardType: TextInputType.number,
+              readOnly: true,
+              decoration: const InputDecoration(
+                labelText: 'Jumlah Jiwa',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: jumlahJiwaMenetapController,
-              decoration:
-                  const InputDecoration(labelText: 'Jumlah Jiwa Menetap'),
-              keyboardType: TextInputType.number,
+              readOnly: true,
+              decoration: const InputDecoration(
+                labelText: 'Jumlah Jiwa Menetap',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 24),
             ...pertanyaanPerPilar.entries.map((entry) {
