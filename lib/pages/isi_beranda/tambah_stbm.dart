@@ -27,8 +27,6 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
   int? pegawaiId;
   int? selectedWilayahId;
 
-  final String baseUrl = Config.baseUrl;
-
   // Data pertanyaan
   Map<int, List<Map<String, dynamic>>> pertanyaanPerPilar = {};
   Map<int, Map<int, String>> jawabanPerPertanyaan = {};
@@ -47,11 +45,13 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
     setState(() {
       pegawaiId = prefs.getInt('pegawai_id');
       pegawaiController.text = prefs.getString('nama') ?? '';
+
     });
   }
 
   Future<void> _fetchKk() async {
     try {
+      final baseUrl = await Config.baseUrl;
       final response = await http.get(Uri.parse('$baseUrl/api/kk'));
       if (response.statusCode == 200) {
         final data = List<Map<String, dynamic>>.from(jsonDecode(response.body));
@@ -68,6 +68,7 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
 
   Future<void> _fetchPertanyaan() async {
     try {
+      final baseUrl = await Config.baseUrl;
       final response = await http.get(Uri.parse('$baseUrl/api/pertanyaan'));
       if (response.statusCode == 200) {
         final data = List<Map<String, dynamic>>.from(jsonDecode(response.body));
@@ -121,6 +122,7 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
     });
 
     try {
+      final baseUrl = await Config.baseUrl;
       final response = await http.post(
         Uri.parse('$baseUrl/api/simpanSTBM'),
         headers: {'Content-Type': 'application/json'},

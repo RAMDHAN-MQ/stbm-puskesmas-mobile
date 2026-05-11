@@ -31,10 +31,11 @@ class _IsiBerandaState extends State<IsiBeranda> {
 
   Future<void> fetchDashboard() async {
     final prefs = await SharedPreferences.getInstance();
+    final baseUrl = await Config.baseUrl;
     final pegawaiId = prefs.getInt('pegawai_id');
 
     final response = await http.get(
-      Uri.parse('${Config.baseUrl}/api/dashboard?pegawai_id=$pegawaiId'),
+      Uri.parse('$baseUrl/api/dashboard?pegawai_id=$pegawaiId'),
     );
 
     if (response.statusCode == 200) {
@@ -64,10 +65,6 @@ class _IsiBerandaState extends State<IsiBeranda> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            /// =============================
-            /// 1️⃣ TOTAL | BULAN | HARI
-            /// =============================
             Row(
               children: [
                 Expanded(child: _buildCard("Total Data", totalData)),
@@ -77,50 +74,35 @@ class _IsiBerandaState extends State<IsiBeranda> {
                 Expanded(child: _buildCard("Hari Ini", hariIni)),
               ],
             ),
-
             const SizedBox(height: 25),
-
-            /// =============================
-            /// 2️⃣ LIST DESA
-            /// =============================
             const Text(
               "Data per Desa",
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-
             ...desaList.map((desa) => Card(
                   child: ListTile(
                     title: Text(desa['desa']),
                     trailing: Text(
                       desa['total_input'].toString(),
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 )),
-
             const SizedBox(height: 25),
-
-            /// =============================
-            /// 3️⃣ DATA TERAKHIR
-            /// =============================
             const Text(
               "Data Terakhir",
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-
-            ...dataTerakhir.map((item) => Card(
-                  child: ListTile(
-                    title: Text(item['nama_kepala_kk']),
-                    subtitle: Text("${item['desa']} • ${item['tanggal']}"),
-                  ),
-                )),
+            ...dataTerakhir.map(
+              (item) => Card(
+                child: ListTile(
+                  title: Text(item['nama_kepala_kk']),
+                  subtitle: Text("${item['desa']} • ${item['tanggal']}"),
+                ),
+              ),
+            ),
           ],
         ),
       ),

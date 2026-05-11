@@ -30,11 +30,12 @@ class _StatistikPageState extends State<StatistikPage> {
 
   Future<void> fetchStatistik() async {
     final prefs = await SharedPreferences.getInstance();
+    final baseUrl = await Config.baseUrl;
     final pegawaiId = prefs.getInt('pegawai_id');
 
     final response = await http.get(
       Uri.parse(
-        '${Config.baseUrl}/api/statistik?pegawai_id=$pegawaiId&tahun=${selectedTahun ?? ""}',
+        '$baseUrl/api/statistik?pegawai_id=$pegawaiId&tahun=${selectedTahun ?? ""}',
       ),
     );
 
@@ -61,9 +62,6 @@ class _StatistikPageState extends State<StatistikPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// ======================
-          /// FILTER
-          /// ======================
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -93,9 +91,6 @@ class _StatistikPageState extends State<StatistikPage> {
 
           const SizedBox(height: 25),
 
-          /// ======================
-          /// BAR CHART DESA
-          /// ======================
           const Text(
             "Data per Desa",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),

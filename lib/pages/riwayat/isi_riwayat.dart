@@ -17,8 +17,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
   final TextEditingController wilayahController = TextEditingController();
   final TextEditingController statusController = TextEditingController();
 
-  final String baseUrl = Config.baseUrl;
-
   List<dynamic> get stbmProses =>
       stbmList.where((e) => e['status'] == 'proses').toList();
 
@@ -35,6 +33,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final pegawaiId = prefs.getInt('pegawai_id');
+      final baseUrl = await Config.baseUrl;
       final response = await http.get(Uri.parse('$baseUrl/api/stbm?pegawai_id=$pegawaiId'));
       if (response.statusCode == 200) {
         setState(() {

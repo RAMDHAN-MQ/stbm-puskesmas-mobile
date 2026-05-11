@@ -22,7 +22,7 @@ class _BerandaPageState extends State<BerandaPage> {
   static const Color primaryGreen = Color(0xFF128C7E);
 
   // GANTI SESUAI IP LARAVEL
-  static const String baseUrl = '${Config.baseUrl}';
+  String baseUrl = '';
 
   String nama = '';
   String nip = '';
@@ -43,10 +43,13 @@ class _BerandaPageState extends State<BerandaPage> {
 
   Future<void> _loadUser() async {
     final prefs = await SharedPreferences.getInstance();
+    final url = await Config.baseUrl;
     setState(() {
       nama = prefs.getString('nama') ?? '';
       nip = prefs.getString('nip') ?? '';
       foto = prefs.getString('foto') ?? '';
+
+      baseUrl = url;
     });
   }
 

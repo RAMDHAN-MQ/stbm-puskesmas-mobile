@@ -15,7 +15,7 @@ class _IsiProfileState extends State<IsiProfile> {
   String foto = '';
   String role = '';
 
-  final String baseUrl = Config.baseUrl;
+  String baseUrl = '';
 
   @override
   void initState() {
@@ -25,11 +25,14 @@ class _IsiProfileState extends State<IsiProfile> {
 
   Future<void> _loadUser() async {
     final prefs = await SharedPreferences.getInstance();
+    final url = await Config.baseUrl;
     setState(() {
       nama = prefs.getString('nama') ?? '';
       nip = prefs.getString('nip') ?? '';
       foto = prefs.getString('foto') ?? '';
       role = prefs.getString('role') ?? '';
+
+      baseUrl = url;
     });
   }
 
@@ -44,7 +47,6 @@ class _IsiProfileState extends State<IsiProfile> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
           child: Column(
             children: [
-
               // FOTO PROFILE
               Container(
                 decoration: BoxDecoration(
@@ -71,7 +73,7 @@ class _IsiProfileState extends State<IsiProfile> {
                       : null,
                 ),
               ),
-              
+
               const SizedBox(height: 30),
 
               // CARD INFORMASI
@@ -82,18 +84,15 @@ class _IsiProfileState extends State<IsiProfile> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 25),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
                   child: Column(
                     children: [
-                      _profileItem(Icons.person_outline,
-                          'Nama Lengkap', nama),
+                      _profileItem(Icons.person_outline, 'Nama Lengkap', nama),
                       const Divider(height: 30),
-                      _profileItem(Icons.badge_outlined,
-                          'NIP', nip),
+                      _profileItem(Icons.badge_outlined, 'NIP', nip),
                       const Divider(height: 30),
-                      _profileItem(Icons.badge_outlined,
-                          'Jabatan', role),
+                      _profileItem(Icons.badge_outlined, 'Jabatan', role),
                     ],
                   ),
                 ),

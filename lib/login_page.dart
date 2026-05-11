@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stbm_mobile/pengaturan.dart';
 import 'pages/beranda.dart';
 import 'config.dart';
 import 'dart:convert';
@@ -30,8 +31,9 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     try {
+      final baseUrl = await Config.baseUrl;
       final response = await http.post(
-        Uri.parse('${Config.baseUrl}/api/loginHP'),
+        Uri.parse('$baseUrl/api/loginHP'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -197,6 +199,18 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.white,
+        child: Icon(Icons.settings),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => Pengaturan(),
+            ),
+          );
+        },
       ),
     );
   }
