@@ -88,15 +88,12 @@ class _StatistikPageState extends State<StatistikPage> {
               ),
             ],
           ),
-
           const SizedBox(height: 25),
-
           const Text(
             "Data per Desa",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 15),
-
           SizedBox(
             height: 250,
             child: BarChart(
@@ -138,21 +135,18 @@ class _StatistikPageState extends State<StatistikPage> {
               ),
             ),
           ),
-
           const SizedBox(height: 30),
-
           const Text(
             "Data per Pilar",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 15),
-
           SizedBox(
             height: 300,
             child: BarChart(
               BarChartData(
                 barGroups: List.generate(5, (index) {
-                  final key = "pilar_${index + 1}";
+                  final key = "${index + 1}";
                   final layak = (pilar[key]?['layak'] ?? 0).toDouble();
                   final tidakLayak =
                       (pilar[key]?['tidak_layak'] ?? 0).toDouble();
@@ -194,9 +188,7 @@ class _StatistikPageState extends State<StatistikPage> {
               ),
             ),
           ),
-
           const SizedBox(height: 12),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: const [
@@ -209,7 +201,6 @@ class _StatistikPageState extends State<StatistikPage> {
               Text("Tidak Layak"),
             ],
           ),
-
           const SizedBox(height: 30),
         ],
       ),

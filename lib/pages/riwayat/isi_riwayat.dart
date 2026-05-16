@@ -13,9 +13,17 @@ class RiwayatPage extends StatefulWidget {
 }
 
 class _RiwayatPageState extends State<RiwayatPage> {
+  int currentPage = 1;
+  int lastPage = 1;
+
+  String? selectedDesa;
+
+  List desaList = [];
   List<dynamic> stbmList = [];
-  final TextEditingController wilayahController = TextEditingController();
-  final TextEditingController statusController = TextEditingController();
+
+  TextEditingController searchController = TextEditingController();
+
+  bool isLoading = false;
 
   List<dynamic> get stbmProses =>
       stbmList.where((e) => e['status'] == 'proses').toList();
@@ -26,29 +34,66 @@ class _RiwayatPageState extends State<RiwayatPage> {
   @override
   void initState() {
     super.initState();
-    _fetchStbm();
+    _fetchStbm(reset: true);
+    fetchDesa();
   }
 
-  Future<void> _fetchStbm() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final pegawaiId = prefs.getInt('pegawai_id');
-      final baseUrl = await Config.baseUrl;
-      final response = await http.get(Uri.parse('$baseUrl/api/stbm?pegawai_id=$pegawaiId'));
-      if (response.statusCode == 200) {
-        setState(() {
-          stbmList = jsonDecode(response.body);
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal mengambil data STBM')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+  Future<void> fetchDesa() async {
+    final prefs = await SharedPreferences.getInstance();
+    final pegawaiId = prefs.getInt('pegawai_id');
+    final baseUrl = await Config.baseUrl;
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/stbm/listdesa?pegawai_id=$pegawaiId'),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        desaList = jsonDecode(response.body);
+      });
     }
+  }
+
+  Future<void> _fetchStbm({bool reset = false}) async {
+    setState(() => isLoading = true);
+
+    final prefs = await SharedPreferences.getInstance();
+    final pegawaiId = prefs.getInt('pegawai_id');
+    final baseUrl = await Config.baseUrl;
+
+    if (reset) {
+      currentPage = 1;
+    }
+
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl/api/stbm'
+        '?pegawai_id=$pegawaiId'
+        '&page=$currentPage'
+        '&desa=${selectedDesa ?? ''}'
+        '&search=${searchController.text}',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      setState(() {
+        stbmList = data['data'];
+        lastPage = data['last_page'];
+        isLoading = false;
+      });
+    } else {
+      setState(() => isLoading = false);
+    }
+  }
+
+  void onSearchChanged(String value) {
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (value == searchController.text) {
+        _fetchStbm(reset: true);
+      }
+    });
   }
 
   @override
@@ -57,46 +102,96 @@ class _RiwayatPageState extends State<RiwayatPage> {
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
-          // Konten utama
           Expanded(
             child: RefreshIndicator(
-              onRefresh: _fetchStbm,
-              child: stbmList.isEmpty
-                  ? ListView(
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.6,
-                          child: Center(
-                            child: Text(
-                              'Tidak ada data',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey[600],
-                              ),
-                            ),
+              onRefresh: () => _fetchStbm(reset: true),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  TextField(
+                    controller: searchController,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.search),
+                      hintText: 'Cari Nama / No KK',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: onSearchChanged,
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButton<String>(
+                    value: selectedDesa,
+                    hint: const Text("Semua Desa"),
+                    isExpanded: true,
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text("Semua Desa"),
+                      ),
+                      ...desaList.map<DropdownMenuItem<String>>((desa) {
+                        return DropdownMenuItem(
+                          value: desa['desa'],
+                          child: Text(desa['desa']),
+                        );
+                      }),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        selectedDesa = value;
+                      });
+                      _fetchStbm(reset: true);
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  if (stbmList.isEmpty && !isLoading)
+                    const Padding(
+                      padding: EdgeInsets.all(40),
+                      child: Center(
+                        child: Text(
+                          'Data tidak ditemukan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
                           ),
                         ),
-                      ],
-                    )
-                  : SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // STATUS PROSES
-                          if (stbmProses.isNotEmpty) ...[
-                            statusHeader('Status Proses', Colors.orange),
-                            stbmListView(stbmProses),
-                          ],
-
-                          // STATUS SELESAI
-                          if (stbmSelesai.isNotEmpty) ...[
-                            statusHeader('Status Selesai', Colors.green),
-                            stbmListView(stbmSelesai),
-                          ],
-                        ],
                       ),
+                    )
+                  else ...[
+                    if (stbmProses.isNotEmpty) ...[
+                      statusHeader('Status Proses', Colors.orange),
+                      stbmListView(stbmProses),
+                    ],
+                    if (stbmSelesai.isNotEmpty) ...[
+                      statusHeader('Status Selesai', Colors.green),
+                      stbmListView(stbmSelesai),
+                    ],
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ElevatedButton(
+                          onPressed: currentPage > 1
+                              ? () {
+                                  setState(() => currentPage--);
+                                  _fetchStbm();
+                                }
+                              : null,
+                          child: const Text("<-"),
+                        ),
+                        Text("Halaman $currentPage / $lastPage"),
+                        ElevatedButton(
+                          onPressed: currentPage < lastPage
+                              ? () {
+                                  setState(() => currentPage++);
+                                  _fetchStbm();
+                                }
+                              : null,
+                          child: const Text("->"),
+                        ),
+                      ],
                     ),
+                  ],
+                ],
+              ),
             ),
           ),
         ],
@@ -108,9 +203,9 @@ class _RiwayatPageState extends State<RiwayatPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-      margin: const EdgeInsets.only(bottom: 8, top: 16),
+      margin: const EdgeInsets.only(top: 16, bottom: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15), // warna tipis
+        color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
@@ -119,7 +214,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
           fontWeight: FontWeight.w600,
           color: color,
         ),
-        textAlign: TextAlign.left,
       ),
     );
   }
@@ -136,9 +230,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
               children: [
                 Text(
                   'Kepala Keluarga: ${stbm['kk']?['nama_kepala_kk'] ?? '-'}',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
-                const SizedBox(height: 2),
                 Text(
                   'No KK: ${stbm['kk']?['no_kk'] ?? '-'}',
                   style: const TextStyle(color: Colors.grey),

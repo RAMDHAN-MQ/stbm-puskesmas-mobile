@@ -14,6 +14,9 @@ class IsiBeranda extends StatefulWidget {
 class _IsiBerandaState extends State<IsiBeranda> {
   static const Color primaryGreen = Color(0xFF128C7E);
 
+  int currentPage = 0;
+  final int perPage = 5;
+
   int totalData = 0;
   int bulanIni = 0;
   int hariIni = 0;
@@ -22,6 +25,16 @@ class _IsiBerandaState extends State<IsiBeranda> {
   List dataTerakhir = [];
 
   bool isLoading = true;
+
+  List get paginatedDesa {
+    final start = currentPage * perPage;
+    final end = start + perPage;
+
+    return desaList.sublist(
+      start,
+      end > desaList.length ? desaList.length : end,
+    );
+  }
 
   @override
   void initState() {
@@ -80,15 +93,44 @@ class _IsiBerandaState extends State<IsiBeranda> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            ...desaList.map((desa) => Card(
-                  child: ListTile(
-                    title: Text(desa['desa']),
-                    trailing: Text(
-                      desa['total_input'].toString(),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
+            ...paginatedDesa.map(
+              (desa) => Card(
+                child: ListTile(
+                  title: Text(desa['desa']),
+                  trailing: Text(
+                    desa['total_input'].toString(),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                )),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: currentPage > 0
+                      ? () {
+                          setState(() {
+                            currentPage--;
+                          });
+                        }
+                      : null,
+                  child: const Text('<-'),
+                ),
+                Text('Halaman ${currentPage + 1}'),
+                ElevatedButton(
+                  onPressed: (currentPage + 1) * perPage < desaList.length
+                      ? () {
+                          setState(() {
+                            currentPage++;
+                          });
+                        }
+                      : null,
+                  child: const Text('->'),
+                ),
+              ],
+            ),
             const SizedBox(height: 25),
             const Text(
               "Data Terakhir",
