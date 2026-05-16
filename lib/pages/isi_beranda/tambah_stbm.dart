@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class TambahStbmPage extends StatefulWidget {
   const TambahStbmPage({super.key});
@@ -24,6 +26,9 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
   String? selectedKk;
   List<Map<String, dynamic>> kkList = [];
 
+  File? bukti;
+  final ImagePicker _picker = ImagePicker();
+
   int? pegawaiId;
   int? selectedWilayahId;
 
@@ -39,13 +44,25 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
     _fetchPertanyaan();
   }
 
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 70,
+    );
+
+    if (pickedFile != null) {
+      setState(() {
+        bukti = File(pickedFile.path);
+      });
+    }
+  }
+
   Future<void> _loadPegawai() async {
     final prefs = await SharedPreferences.getInstance();
 
     setState(() {
       pegawaiId = prefs.getInt('pegawai_id');
       pegawaiController.text = prefs.getString('nama') ?? '';
-
     });
   }
 
@@ -93,19 +110,19 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
 
   Future<void> _addStbm() async {
     final noKk = selectedKk;
-    final namaKepalaKk = namaKepalaKkController.text;
 
-    if (pegawaiId == null) {
+    if (pegawaiId == null ||
+        selectedKk == null ||
+        namaKepalaKkController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Pegawai tidak ditemukan, silakan login ulang')),
+        const SnackBar(content: Text('Semua data wajib diisi')),
       );
       return;
     }
 
-    if (selectedKk == null || noKk!.isEmpty || namaKepalaKk.isEmpty) {
+    if (bukti == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Semua data wajib diisi')),
+        const SnackBar(content: Text('Foto bukti wajib diambil')),
       );
       return;
     }
@@ -123,16 +140,27 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
 
     try {
       final baseUrl = await Config.baseUrl;
-      final response = await http.post(
+
+      var request = http.MultipartRequest(
+        'POST',
         Uri.parse('$baseUrl/api/simpanSTBM'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'pegawai_id': pegawaiId,
-          'wilayah_id': selectedWilayahId,
-          'no_kk': noKk,
-          'jawaban': jawabanList,
-        }),
       );
+
+      request.fields['pegawai_id'] = pegawaiId.toString();
+      request.fields['wilayah_id'] = selectedWilayahId.toString();
+      request.fields['no_kk'] = noKk!;
+      request.fields['jawaban'] = jsonEncode(jawabanList);
+
+      if (bukti != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'bukti',
+            bukti!.path,
+          ),
+        );
+      }
+
+      final response = await request.send();
 
       if (response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -262,6 +290,31 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
     return true;
   }
 
+  Widget buildInfo(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(
+            fontSize: 16,
+            color: Colors.black,
+          ),
+          children: [
+            TextSpan(
+              text: '$label : ',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            TextSpan(
+              text: value.isEmpty ? '-' : value,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -321,59 +374,38 @@ class _TambahStbmPageState extends State<TambahStbmPage> {
               },
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: wilayah,
-              readOnly: true,
-              decoration: const InputDecoration(
-                labelText: 'Wilayah',
-                border: OutlineInputBorder(),
+            if (selectedKk != null) ...[
+              buildInfo('Wilayah', wilayah.text),
+              buildInfo('Nama Kepala KK', namaKepalaKkController.text),
+              buildInfo('RT', rtController.text),
+              buildInfo('RW', rwController.text),
+              buildInfo('Jumlah Jiwa', jumlahJiwaController.text),
+              buildInfo(
+                'Jumlah Jiwa Menetap',
+                jumlahJiwaMenetapController.text,
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: namaKepalaKkController,
-              readOnly: true,
-              decoration: const InputDecoration(
-                labelText: 'Nama Kepala KK',
-                border: OutlineInputBorder(),
+              Row(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _pickImage,
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('Bukti'),
+                  ),
+                  const SizedBox(width: 12),
+                  if (bukti != null)
+                    const Icon(Icons.check_circle, color: Colors.green),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: rtController,
-              readOnly: true,
-              decoration: const InputDecoration(
-                labelText: 'RT',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: rwController,
-              readOnly: true,
-              decoration: const InputDecoration(
-                labelText: 'RW',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: jumlahJiwaController,
-              readOnly: true,
-              decoration: const InputDecoration(
-                labelText: 'Jumlah Jiwa',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: jumlahJiwaMenetapController,
-              readOnly: true,
-              decoration: const InputDecoration(
-                labelText: 'Jumlah Jiwa Menetap',
-                border: OutlineInputBorder(),
-              ),
-            ),
+              if (bukti != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Image.file(
+                    bukti!,
+                    height: 150,
+                  ),
+                ),
+            ],
+            Divider(),
             const SizedBox(height: 24),
             ...pertanyaanPerPilar.entries.map((entry) {
               int pilar = entry.key;
