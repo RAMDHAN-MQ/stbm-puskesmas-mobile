@@ -13,7 +13,7 @@ class StatistikPage extends StatefulWidget {
 }
 
 class _StatistikPageState extends State<StatistikPage> {
-  String? selectedTahun;
+  String? selectedTahun = "Semua";
   List tahunList = [];
   bool isLoading = true;
 
@@ -33,9 +33,11 @@ class _StatistikPageState extends State<StatistikPage> {
     final baseUrl = await Config.baseUrl;
     final pegawaiId = prefs.getInt('pegawai_id');
 
+    final tahunParam = selectedTahun == "Semua" ? "" : selectedTahun ?? "";
+
     final response = await http.get(
       Uri.parse(
-        '$baseUrl/api/statistik?pegawai_id=$pegawaiId&tahun=${selectedTahun ?? ""}',
+        '$baseUrl/api/statistik?pegawai_id=$pegawaiId&tahun=$tahunParam',
       ),
     );
 
@@ -71,13 +73,18 @@ class _StatistikPageState extends State<StatistikPage> {
               ),
               DropdownButton<String>(
                 value: selectedTahun,
-                hint: const Text("Pilih Tahun"),
-                items: tahunList.map<DropdownMenuItem<String>>((tahun) {
-                  return DropdownMenuItem<String>(
-                    value: tahun.toString(),
-                    child: Text(tahun.toString()),
-                  );
-                }).toList(),
+                items: [
+                  const DropdownMenuItem<String>(
+                    value: "Semua",
+                    child: Text("Semua Tahun"),
+                  ),
+                  ...tahunList.map<DropdownMenuItem<String>>((tahun) {
+                    return DropdownMenuItem<String>(
+                      value: tahun.toString(),
+                      child: Text(tahun.toString()),
+                    );
+                  }).toList(),
+                ],
                 onChanged: (value) {
                   setState(() {
                     selectedTahun = value;
@@ -98,6 +105,10 @@ class _StatistikPageState extends State<StatistikPage> {
             height: 250,
             child: BarChart(
               BarChartData(
+                maxY: perDesa
+                        .map((e) => (e['total'] as num).toDouble())
+                        .reduce((a, b) => a > b ? a : b) +
+                    3,
                 barGroups: List.generate(perDesa.length, (index) {
                   final item = perDesa[index];
                   return BarChartGroupData(
@@ -114,22 +125,51 @@ class _StatistikPageState extends State<StatistikPage> {
                 }),
                 titlesData: FlTitlesData(
                   leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: true),
+                    sideTitles: SideTitles(showTitles: true, reservedSize: 30),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
                   ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
+                      reservedSize: 30,
                       getTitlesWidget: (value, meta) {
                         int index = value.toInt();
+
                         if (index < perDesa.length) {
-                          return Text(
-                            perDesa[index]['desa'],
-                            style: const TextStyle(fontSize: 10),
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Transform.rotate(
+                              angle: 0.5,
+                              child: Text(
+                                perDesa[index]['desa'],
+                                style: const TextStyle(fontSize: 10),
+                              ),
+                            ),
                           );
                         }
+
                         return const Text('');
                       },
                     ),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                ),
+                barTouchData: BarTouchData(
+                  touchTooltipData: BarTouchTooltipData(
+                    tooltipRoundedRadius: 8,
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      return BarTooltipItem(
+                        rod.toY.toString(),
+                        const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -156,13 +196,13 @@ class _StatistikPageState extends State<StatistikPage> {
                     barRods: [
                       BarChartRodData(
                         toY: layak,
-                        width: 10,
+                        width: 16,
                         color: Colors.green,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       BarChartRodData(
                         toY: tidakLayak,
-                        width: 10,
+                        width: 16,
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -170,6 +210,12 @@ class _StatistikPageState extends State<StatistikPage> {
                   );
                 }),
                 titlesData: FlTitlesData(
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -182,7 +228,21 @@ class _StatistikPageState extends State<StatistikPage> {
                     ),
                   ),
                   leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: true),
+                    sideTitles: SideTitles(showTitles: true, reservedSize: 30),
+                  ),
+                ),
+                barTouchData: BarTouchData(
+                  touchTooltipData: BarTouchTooltipData(
+                    tooltipRoundedRadius: 8,
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      return BarTooltipItem(
+                        rod.toY.toString(),
+                        const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
