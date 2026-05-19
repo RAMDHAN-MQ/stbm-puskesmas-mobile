@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:stbm_mobile/pages/statistik/isi_statistik.dart';
 import '../../config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -131,6 +132,8 @@ class _IsiBerandaState extends State<IsiBeranda> {
                 ),
               ],
             ),
+            const SizedBox(height: 25),
+            const StatistikWidget(),
             const SizedBox(height: 25),
             const Text(
               "Data Terakhir",

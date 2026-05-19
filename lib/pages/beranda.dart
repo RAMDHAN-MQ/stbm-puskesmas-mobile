@@ -29,10 +29,9 @@ class _BerandaPageState extends State<BerandaPage> {
   String foto = '';
 
   final List<Widget> _pages = const [
-    IsiBeranda(), // 0 Dashboard
-    StatistikPage(), // 1 Statistik
-    RiwayatPage(), // 2 Riwayat
-    IsiProfile(), // 3 Profile
+    IsiBeranda(),
+    RiwayatPage(),
+    IsiProfile(),
   ];
 
   @override
@@ -183,7 +182,6 @@ class _BerandaPageState extends State<BerandaPage> {
           );
         },
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 8,
@@ -193,10 +191,8 @@ class _BerandaPageState extends State<BerandaPage> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(Icons.home, "Beranda", 0),
-              _buildNavItem(Icons.bar_chart, "Statistik", 1),
-              const SizedBox(width: 40),
-              _buildNavItem(Icons.history, "Riwayat", 2),
-              _buildNavItem(Icons.person, "Profile", 3),
+              _buildNavItem(Icons.history, "Riwayat", 1),
+              _buildNavItem(Icons.person, "Profile", 2),
             ],
           ),
         ),
